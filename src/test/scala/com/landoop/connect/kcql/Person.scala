@@ -1,4 +1,4 @@
-package com.datamountaineer.connect.kcql
+package com.landoop.connect.kcql
 
 case class Person(name: String, address: Address)
 

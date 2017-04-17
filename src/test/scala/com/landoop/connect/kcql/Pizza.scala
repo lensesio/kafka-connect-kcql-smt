@@ -1,8 +1,4 @@
-package com.datamountaineer.connect.kcql
-
-import java.util
-
-import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
+package com.landoop.connect.kcql
 
 case class Ingredient(name: String, sugar: Double, fat: Double)
 

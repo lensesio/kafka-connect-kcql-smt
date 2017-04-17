@@ -1,6 +1,6 @@
-package com.datamountaineer.connect.kcql
+package com.landoop.connect.kcql
 
-import com.datamountaineer.connect.kcql.StructKcql._
+import com.landoop.connect.kcql.StructKcql._
 import com.sksamuel.avro4s.{RecordFormat, SchemaFor, ToRecord}
 import io.confluent.connect.avro.AvroData
 import org.apache.kafka.connect.data.Struct
