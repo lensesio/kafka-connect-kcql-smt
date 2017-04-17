@@ -1,4 +1,4 @@
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
 case class Person(name: String, address: Address)
 

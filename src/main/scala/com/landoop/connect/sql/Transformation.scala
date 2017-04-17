@@ -13,29 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
 import java.util
 
-import com.datamountaineer.kcql.Kcql
+import org.apache.calcite.sql.SqlIdentifier
 import org.apache.kafka.common.config.{AbstractConfig, ConfigDef}
 import org.apache.kafka.connect.connector.ConnectRecord
 
 /**
-  * The KCQL transformer. It takes two kcql entries for keys and values.
+  * The SQL transformer. It takes two sql entries for keys and values.
+  *
   * @tparam T
   */
 class Transformation[T <: ConnectRecord[T]] extends org.apache.kafka.connect.transforms.Transformation[T] {
-  private var kcqlKeyMap = Map.empty[String, Kcql]
-  private var kcqlValueMap = Map.empty[String, Kcql]
+  private var sqlKeyMap = Map.empty[String, Sql]
+  private var sqlValueMap = Map.empty[String, Sql]
 
   override def apply(record: T): T = {
     val topic = record.topic()
 
-    kcqlKeyMap.get(topic).map { kcql =>
-      val (keySchema, keyValue) = Transform(kcql, record.keySchema(), record.key(), true, topic, record.kafkaPartition())
-      kcqlValueMap.get(topic).map { kcql =>
-        val (valueSchema, value) = Transform(kcql, record.valueSchema(), record.value(), false, topic, record.kafkaPartition())
+    sqlKeyMap.get(topic).map { sql =>
+      val (keySchema, keyValue) = Transform(sql, record.keySchema(), record.key(), true, topic, record.kafkaPartition())
+      sqlValueMap.get(topic).map { sql =>
+        val (valueSchema, value) = Transform(sql, record.valueSchema(), record.value(), false, topic, record.kafkaPartition())
         record.newRecord(
           record.topic(),
           record.kafkaPartition(),
@@ -56,8 +57,8 @@ class Transformation[T <: ConnectRecord[T]] extends org.apache.kafka.connect.tra
           record.timestamp())
       }
     }.getOrElse {
-      kcqlValueMap.get(topic).map { kcql =>
-        val (valueSchema, value) = Transform(kcql, record.valueSchema(), record.value(), false, topic, record.kafkaPartition())
+      sqlValueMap.get(topic).map { sql =>
+        val (valueSchema, value) = Transform(sql, record.valueSchema(), record.value(), false, topic, record.kafkaPartition())
         record.newRecord(
           topic,
           record.kafkaPartition(),
@@ -78,53 +79,52 @@ class Transformation[T <: ConnectRecord[T]] extends org.apache.kafka.connect.tra
   override def configure(configs: util.Map[String, _]): Unit = {
     val config = new TransformationConfig(configs)
 
-    def fromConfig(kcqlValue: String) =
-      Option(kcqlValue)
+    def fromConfig(query: String) =
+      Option(query)
         .map { c =>
           c.split(";")
             .map { k =>
-              val kcql = Kcql.parse(k.trim)
-              kcql.getSource -> kcql
+              val sql = Sql.parse(k.trim)
+              sql.select.getFrom.asInstanceOf[SqlIdentifier].getSimple -> sql
             }.toMap
         }.getOrElse(Map.empty)
 
-    kcqlKeyMap = fromConfig(config.getString(Transformation.KEY_KCQL_CONFIG))
-    kcqlValueMap = fromConfig(config.getString(Transformation.VALUE_KCQL_CONFIG))
+    sqlKeyMap = fromConfig(config.getString(Transformation.KEY_SQL_CONFIG))
+    sqlValueMap = fromConfig(config.getString(Transformation.VALUE_SQL_CONFIG))
   }
 }
 
 
 private object Transformation {
 
-  val KEY_KCQL_CONFIG = "connect.transforms.kcql.key"
-  private val KEY_KCQL_DOC = "Provides the kcql transformation for the keys. To provide more than one separate them by ';'"
-  private val KEY_KCQL_DISPLAY = "Key(-s) KCQL"
+  val KEY_SQL_CONFIG = "connect.transforms.sql.key"
+  private val KEY_SQL_DOC = "Provides the SQL transformation for the keys. To provide more than one separate them by ';'"
+  private val KEY_SQL_DISPLAY = "Key(-s) SQL transformation"
 
-  val VALUE_KCQL_CONFIG = "connect.transforms.kcql.value"
-  private val VALUE_KCQL_DOC = "Provides the kcql transformation for the Kafka message value. To provide more than one separate them by ';'"
-  private val VALUE_KCQL_DISPLAY = "Value(-s) KCQL"
-
+  val VALUE_SQL_CONFIG = "connect.transforms.sql.value"
+  private val VALUE_SQL_DOC = "Provides the SQL transformation for the Kafka message value. To provide more than one separate them by ';'"
+  private val VALUE_SQL_DISPLAY = "Value(-s) SQL transformation"
 
   val configDef: ConfigDef = new ConfigDef()
-    .define(VALUE_KCQL_CONFIG,
+    .define(VALUE_SQL_CONFIG,
       ConfigDef.Type.STRING,
       null,
       ConfigDef.Importance.MEDIUM,
-      VALUE_KCQL_DOC,
+      VALUE_SQL_DOC,
       "Transforms",
       1,
       ConfigDef.Width.LONG,
-      VALUE_KCQL_DISPLAY
+      VALUE_SQL_DISPLAY
     )
-    .define(KEY_KCQL_CONFIG,
+    .define(KEY_SQL_CONFIG,
       ConfigDef.Type.STRING,
       null,
       ConfigDef.Importance.MEDIUM,
-      KEY_KCQL_DOC,
+      KEY_SQL_DOC,
       "Transforms",
       2,
       ConfigDef.Width.LONG,
-      KEY_KCQL_DISPLAY
+      KEY_SQL_DISPLAY
     )
 }
 

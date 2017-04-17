@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
-import com.datamountaineer.kcql.{Kcql, Field => KcqlField}
+import com.landoop.json.sql.SqlContext
+import org.apache.calcite.sql.SqlSelect
 import org.apache.kafka.connect.data.{Field, Schema, SchemaBuilder}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
-object StructSchemaKcql {
+object StructSchemaSql {
 
-  implicit class AvroSchemaKcqlConverter(val schema: Schema) extends AnyVal {
+  implicit class SchemaSqlExtensions(val schema: Schema) extends AnyVal {
 
     def getFields(path: Seq[String]): Seq[Field] = {
       def navigate(current: Schema, parents: Seq[String]): Seq[Field] = {
@@ -52,24 +53,24 @@ object StructSchemaKcql {
       AvroSchemaExtension.fromPath(schema, path)
     }
 
-    def copy(kcql: Kcql): Schema = {
-      if (kcql.hasRetainStructure) {
-        implicit val kcqlContext = new KcqlContext(kcql.getFields)
+    def copy(query: SqlSelect, flatten: Boolean): Schema = {
+      if (!flatten) {
+        implicit val kcqlContext = new SqlContext(com.landoop.json.sql.Field.from(query))
         copy
       }
       else {
-        flatten(kcql.getFields)
+        this.flatten(com.landoop.json.sql.Field.from(query))
       }
     }
 
-    def copy()(implicit kcqlContext: KcqlContext): Schema = {
+    def copy()(implicit sqlContext: SqlContext): Schema = {
       AvroSchemaExtension.copy(schema, Vector.empty)
     }
 
-    def flatten(fields: Seq[KcqlField]): Schema = {
+    def flatten(fields: Seq[com.landoop.json.sql.Field]): Schema = {
       def allowOnlyStarSelection() = {
         fields match {
-          case Seq(f) if f.getName == "*" => schema
+          case Seq(f) if f.name == "*" => schema
           case _ => throw new IllegalArgumentException(s"You can't select fields from schema:$schema")
         }
       }
@@ -84,7 +85,7 @@ object StructSchemaKcql {
 
         case Schema.Type.STRUCT =>
           fields match {
-            case Seq(f) if f.getName == "*" => schema
+            case Seq(f) if f.name == "*" => schema
             case _ => createRecordSchemaForFlatten(fields)
           }
       }
@@ -95,7 +96,7 @@ object StructSchemaKcql {
       schema
     }
 
-    private def createRecordSchemaForFlatten(fields: Seq[KcqlField]): Schema = {
+    private def createRecordSchemaForFlatten(fields: Seq[com.landoop.json.sql.Field]): Schema = {
       var builder = SchemaBuilder.struct().name(schema.name())
         .doc(schema.doc())
       Option(schema.parameters()).map(builder.parameters)
@@ -103,18 +104,18 @@ object StructSchemaKcql {
       if (schema.isOptional) builder.optional()
 
       val fieldParentsMap = fields.foldLeft(Map.empty[String, ArrayBuffer[String]]) { case (map, f) =>
-        val key = Option(f.getParentFields).map(_.mkString(".")).getOrElse("")
+        val key = Option(f.parents).map(_.mkString(".")).getOrElse("")
         val buffer = map.getOrElse(key, ArrayBuffer.empty[String])
-        if (buffer.contains(f.getName)) {
+        if (buffer.contains(f.name)) {
           throw new IllegalArgumentException(s"You have defined the field ${
             if (f.hasParents) {
-              f.getParentFields.mkString(".") + "." + f.getName
+              f.parents.mkString(".") + "." + f.name
             } else {
-              f.getName
+              f.name
             }
           } more than once!")
         }
-        buffer += f.getName
+        buffer += f.name
         map + (key -> buffer)
       }
 
@@ -132,9 +133,9 @@ object StructSchemaKcql {
 
       fields.foreach {
 
-        case field if field.getName == "*" =>
-          val siblings = fieldParentsMap.get(Option(field.getParentFields).map(_.mkString(".")).getOrElse(""))
-          Option(field.getParentFields)
+        case field if field.name == "*" =>
+          val siblings = fieldParentsMap.get(Option(field.parents).map(_.mkString(".")).getOrElse(""))
+          Option(field.parents)
             .map { p =>
               val s = schema.fromPath(p)
                 .headOption
@@ -161,24 +162,24 @@ object StructSchemaKcql {
             }
 
         case field if field.hasParents =>
-          schema.fromPath(field.getParentFields.toVector :+ field.getName)
+          schema.fromPath(field.parents.toVector :+ field.name)
             .foreach { extracted =>
-              require(extracted != null, s"Invalid field:${(field.getParentFields.toVector :+ field.getName).mkString(".")}")
+              require(extracted != null, s"Invalid field:${(field.parents :+ field.name).mkString(".")}")
               AvroSchemaExtension.checkAllowedSchemas(extracted.schema(), field)
-              if (field.getAlias == "*") {
+              if (field.alias == "*") {
                 builder.field(getNextFieldName(extracted.name()), extracted.schema())
               } else {
-                builder.field(getNextFieldName(field.getAlias), extracted.schema())
+                builder.field(getNextFieldName(field.alias), extracted.schema())
               }
             }
 
         case field =>
-          val originalField = Option(schema.field(field.getName))
+          val originalField = Option(schema.field(field.name))
             .getOrElse {
-              throw new IllegalArgumentException(s"Can't find field:${field.getName} in schema:$schema")
+              throw new IllegalArgumentException(s"Can't find field:${field.name} in schema:$schema")
             }
           AvroSchemaExtension.checkAllowedSchemas(originalField.schema(), field)
-          builder.field(getNextFieldName(field.getAlias), originalField.schema())
+          builder.field(getNextFieldName(field.alias), originalField.schema())
       }
 
 
@@ -187,7 +188,7 @@ object StructSchemaKcql {
   }
 
   private object AvroSchemaExtension {
-    def copy(from: Schema, parents: Vector[String])(implicit kcqlContext: KcqlContext): Schema = {
+    def copy(from: Schema, parents: Vector[String])(implicit kcqlContext: SqlContext): Schema = {
       from.`type`() match {
         case Schema.Type.STRUCT => createRecordSchema(from, parents)
 
@@ -250,7 +251,7 @@ object StructSchemaKcql {
       }
     }
 
-    private def createRecordSchema(from: Schema, parents: Vector[String])(implicit kcqlContext: KcqlContext): Schema = {
+    private def createRecordSchema(from: Schema, parents: Vector[String])(implicit sqlContext: SqlContext): Schema = {
       val builder = SchemaBuilder.struct()
         .name(from.name())
         .doc(from.doc())
@@ -258,7 +259,7 @@ object StructSchemaKcql {
       Option(from.defaultValue()).foreach(builder.defaultValue)
       if (from.isOptional) builder.optional()
 
-      val fields = kcqlContext.getFieldsForPath(parents)
+      val fields = sqlContext.getFieldsForPath(parents)
       fields match {
         case Seq() =>
           from.fields()
@@ -267,7 +268,7 @@ object StructSchemaKcql {
               builder.field(schemaField.name, newSchema)
             }
 
-        case Seq(Left(f)) if f.getName == "*" =>
+        case Seq(Left(f)) if f.name == "*" =>
           from.fields()
             .foreach { schemaField =>
               val newSchema = copy(schemaField.schema(), parents :+ schemaField.name)
@@ -276,9 +277,9 @@ object StructSchemaKcql {
 
         case other =>
           fields.foreach {
-            case Left(field) if field.getName == "*" =>
+            case Left(field) if field.name == "*" =>
               from.fields()
-                .withFilter(f => !fields.exists(e => e.isLeft && e.left.get.getName == f.name))
+                .withFilter(f => !fields.exists(e => e.isLeft && e.left.get.name == f.name))
                 .map { f =>
                   val newSchema = copy(f.schema(), parents :+ f.name)
                   newSchema.copyProperties(f.schema())
@@ -286,13 +287,13 @@ object StructSchemaKcql {
                 }
 
             case Left(field) =>
-              val originalField = Option(from.field(field.getName))
+              val originalField = Option(from.field(field.name))
                 .getOrElse {
-                  throw new IllegalArgumentException(s"Invalid selecting ${parents.mkString("", ".", ".")}${field.getName}. Schema doesn't contain it.")
+                  throw new IllegalArgumentException(s"Invalid selecting ${parents.mkString("", ".", ".")}${field.name}. Schema doesn't contain it.")
                 }
-              val newSchema = copy(originalField.schema(), parents :+ field.getName)
+              val newSchema = copy(originalField.schema(), parents :+ field.name)
               newSchema.copyProperties(originalField.schema())
-              builder.field(field.getAlias, newSchema)
+              builder.field(field.alias, newSchema)
 
             case Right(field) =>
               val originalField = Option(from.field(field))
@@ -338,9 +339,9 @@ object StructSchemaKcql {
       new Field(field.name(), field.index(), copyAsOptional(field.schema()))
     }
 
-    def checkAllowedSchemas(schema: Schema, field: KcqlField): Unit = {
+    def checkAllowedSchemas(schema: Schema, field: com.landoop.json.sql.Field): Unit = {
       schema.`type`() match {
-        case Schema.Type.ARRAY | Schema.Type.MAP => throw new IllegalArgumentException(s"Can't flatten from schema:$schema by selecting '${field.getName}'")
+        case Schema.Type.ARRAY | Schema.Type.MAP => throw new IllegalArgumentException(s"Can't flatten from schema:$schema by selecting '${field.name}'")
         case _ =>
       }
     }

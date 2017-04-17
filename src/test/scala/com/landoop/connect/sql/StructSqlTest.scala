@@ -1,12 +1,12 @@
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
-import com.landoop.connect.kcql.StructKcql._
+import com.landoop.connect.sql.StructSql._
 import com.sksamuel.avro4s.{RecordFormat, SchemaFor, ToRecord}
 import io.confluent.connect.avro.AvroData
 import org.apache.kafka.connect.data.Struct
 import org.scalatest.{Matchers, WordSpec}
 
-class StructKcqTest extends WordSpec with Matchers {
+class StructSqlTest extends WordSpec with Matchers {
 
   val avroData = new AvroData(16)
 
@@ -25,9 +25,9 @@ class StructKcqTest extends WordSpec with Matchers {
     actual.toString shouldBe expectedRecord.toString
   }
 
-  "StructKcql" should {
+  "StructSql" should {
     "handle null payload" in {
-      null.asInstanceOf[Struct].kcql("SELECT * FROM topic") shouldBe null.asInstanceOf[Any]
+      null.asInstanceOf[Struct].sql("SELECT * FROM topic") shouldBe null.asInstanceOf[Any]
     }
 
 
@@ -38,7 +38,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
 
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
-      val actual = struct.kcql("SELECT name,vegan, calories FROM topic")
+      val actual = struct.sql("SELECT name,vegan, calories FROM topic")
 
       case class LocalPizza(name: String, vegan: Boolean, calories: Int)
       val expected = LocalPizza(pepperoni.name, pepperoni.vegan, pepperoni.calories)
@@ -53,7 +53,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
 
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
-      val actual = struct.kcql("SELECT name as fieldName,vegan as V, calories as C FROM topic")
+      val actual = struct.sql("SELECT name as fieldName,vegan as V, calories as C FROM topic")
 
       case class LocalPizza(fieldName: String, V: Boolean, C: Int)
       val expected = LocalPizza(pepperoni.name, pepperoni.vegan, pepperoni.calories)
@@ -66,7 +66,7 @@ class StructKcqTest extends WordSpec with Matchers {
 
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
-      val actual = struct.kcql("SELECT  calories as C,vegan as V,name as fieldName FROM topic")
+      val actual = struct.sql("SELECT  calories as C,vegan as V,name as fieldName FROM topic")
 
       case class LocalPizza(C: Int, V: Boolean, fieldName: String)
       val expected = LocalPizza(pepperoni.calories, pepperoni.vegan, pepperoni.name)
@@ -80,7 +80,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
       intercept[IllegalArgumentException] {
-        struct.kcql("SELECT *, name as fieldName FROM topic")
+        struct.sql("SELECT *, name as fieldName FROM topic")
       }
     }
 
@@ -89,7 +89,7 @@ class StructKcqTest extends WordSpec with Matchers {
 
       val record = RecordFormat[Person].to(person)
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
-      val actual = struct.kcql("SELECT name, address.street.name FROM topic")
+      val actual = struct.sql("SELECT name, address.street.name FROM topic")
 
       case class LocalPerson(name: String, name_1: String)
       val localPerson = LocalPerson(person.name, person.address.street.name)
@@ -102,7 +102,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Person].to(person)
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT name, address.street.name as streetName FROM topic")
+      val actual = struct.sql("SELECT name, address.street.name as streetName FROM topic")
 
       case class LocalPerson(name: String, streetName: String)
       val localPerson = LocalPerson(person.name, person.address.street.name)
@@ -115,7 +115,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Person].to(person)
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT name, address.street.name as streetName, address.street2.name as streetName2 FROM topic")
+      val actual = struct.sql("SELECT name, address.street.name as streetName, address.street2.name as streetName2 FROM topic")
 
       case class LocalPerson(name: String, streetName: String, streetName2: Option[String])
       val localPerson = LocalPerson(person.name, person.address.street.name, person.address.street2.map(_.name))
@@ -128,7 +128,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Person].to(person)
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT name, address.street.*, address.street2.name as streetName2 FROM topic")
+      val actual = struct.sql("SELECT name, address.street.*, address.street2.name as streetName2 FROM topic")
 
       case class LocalPerson(name: String, name_1: String, streetName2: Option[String])
       val localPerson = LocalPerson(person.name, person.address.street.name, person.address.street2.map(_.name))
@@ -141,7 +141,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Person].to(person)
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT name, address.street.*, address.street2.* FROM topic")
+      val actual = struct.sql("SELECT name, address.street.*, address.street2.* FROM topic")
 
       case class LocalPerson(name: String, name_1: String, name_2: Option[String])
       val localPerson = LocalPerson(person.name, person.address.street.name, person.address.street2.map(_.name))
@@ -150,7 +150,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val person1 = Person("Rick", Address(Street("Rock St"), Some(Street("412 East")), "MtV", "CA", "94041", "USA"))
       val record1 = RecordFormat[Person].to(person1)
 
-      val actual1 = struct.kcql("SELECT name, address.street.*, address.street2.* FROM topic")
+      val actual1 = struct.sql("SELECT name, address.street.*, address.street2.* FROM topic")
       val localPerson1 = LocalPerson(person.name, person.address.street.name, person.address.street2.map(_.name))
       compare(actual1, localPerson1)
 
@@ -162,7 +162,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Person].to(person)
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT address.state, address.city,name, address.street.name FROM topic")
+      val actual = struct.sql("SELECT address.state, address.city,name, address.street.name FROM topic")
 
       case class LocalPerson(state: String, city: String, name: String, name_1: String)
       val localPerson = LocalPerson(person.address.state, person.address.city, person.name, person.address.street.name)
@@ -175,7 +175,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[Person].to(person)
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT address.state as S, address.city as C,name, address.street.name FROM topic")
+      val actual = struct.sql("SELECT address.state as S, address.city as C,name, address.street.name FROM topic")
 
       case class LocalPerson(S: String, C: String, name: String, name_1: String)
       val localPerson = LocalPerson(person.address.state, person.address.city, person.name, person.address.street.name)
@@ -189,7 +189,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val struct = avroData.toConnectData(SchemaFor[Person](), record).value.asInstanceOf[Struct]
 
       intercept[IllegalArgumentException] {
-        struct.kcql("SELECT address.bam, address.city,name, address.street.name FROM topic")
+        struct.sql("SELECT address.bam, address.city,name, address.street.name FROM topic")
       }
     }
 
@@ -200,7 +200,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[SimpleAddress].to(address)
       val struct = avroData.toConnectData(SchemaFor[SimpleAddress](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT * FROM simpleAddress")
+      val actual = struct.sql("SELECT * FROM simpleAddress")
       actual shouldBe struct
     }
 
@@ -210,7 +210,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[SimpleAddress].to(address)
       val struct = avroData.toConnectData(SchemaFor[SimpleAddress](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT street as S, city, state, zip as Z, country as C  FROM simpleAddress")
+      val actual = struct.sql("SELECT street as S, city, state, zip as Z, country as C  FROM simpleAddress")
 
       case class LocalSimpleAddress(S: String, city: String, state: String, Z: String, C: String)
       val expected = LocalSimpleAddress(address.street, address.city, address.state, address.zip, address.country)
@@ -224,7 +224,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[SimpleAddress].to(address)
       val struct = avroData.toConnectData(SchemaFor[SimpleAddress](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT zip as Z, * FROM simpleAddress")
+      val actual = struct.sql("SELECT zip as Z, * FROM simpleAddress")
 
       case class LocalSimpleAddress(Z: String, street: String, city: String, state: String, country: String)
       val expected = LocalSimpleAddress(address.zip, address.street, address.city, address.state, address.country)
@@ -238,7 +238,7 @@ class StructKcqTest extends WordSpec with Matchers {
       val record = RecordFormat[SimpleAddress].to(address)
       val struct = avroData.toConnectData(SchemaFor[SimpleAddress](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT zip as Z, *, state as S FROM simpleAddress")
+      val actual = struct.sql("SELECT zip as Z, *, state as S FROM simpleAddress")
 
       case class LocalSimpleAddress(Z: String, street: String, city: String, country: String, S: String)
       val expected = LocalSimpleAddress(address.zip, address.street, address.city, address.country, address.state)

@@ -1,4 +1,4 @@
-package com.datamountaineer.connect.kcql
+package com.landoop.connect.sql
 
 import com.sksamuel.avro4s.{RecordFormat, SchemaFor, ToRecord}
 import io.confluent.connect.avro.AvroData
@@ -13,7 +13,7 @@ import scala.collection.JavaConversions._
   */
 class TransformationTests extends WordSpec with Matchers {
   "Transformation" should {
-    "handle records for which we haven't specified KCQL" in {
+    "handle records for which we haven't specified SQL" in {
       val t = new Transformation[SinkRecord]
       t.configure(Map.empty[String, Any])
 
@@ -22,13 +22,13 @@ class TransformationTests extends WordSpec with Matchers {
       actual shouldBe sr
     }
 
-    "only apply the KCQL to the registered topics for value only" in {
+    "only apply the SQL to the registered topics for value only" in {
       val topic1 = "the_one_with_kcql"
       val topic2 = "the_one_without_kcql"
 
       val t = new Transformation[SinkRecord]
       t.configure(Map(
-        Transformation.VALUE_KCQL_CONFIG -> s"SELECT *, name as fieldName FROM $topic1 withstructure"
+        Transformation.VALUE_SQL_CONFIG -> s"SELECT *, name as fieldName FROM $topic1 withstructure"
       ))
 
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
@@ -56,13 +56,13 @@ class TransformationTests extends WordSpec with Matchers {
       compare(newSr1.value().asInstanceOf[Struct], newpepperoni)
     }
 
-    "only apply the KCQL to the registered topics for key only" in {
-      val topic1 = "the_one_with_kcql"
-      val topic2 = "the_one_without_kcql"
+    "only apply the SQL to the registered topics for key only" in {
+      val topic1 = "the_one_with_sql"
+      val topic2 = "the_one_without_sql"
 
       val t = new Transformation[SinkRecord]
       t.configure(Map(
-        Transformation.KEY_KCQL_CONFIG -> s"SELECT *, name as fieldName FROM $topic1 withstructure"
+        Transformation.KEY_SQL_CONFIG -> s"SELECT *, name as fieldName FROM $topic1 withstructure"
       ))
 
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)

@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
 import java.util
 
-import com.datamountaineer.kcql.{Kcql, Field => KcqlField}
+import com.landoop.connect.sql.StructSchemaSql._
+import com.landoop.json.sql.{Field, SqlContext}
+import org.apache.calcite.sql.SqlSelect
 import org.apache.kafka.connect.data.{Schema, Struct}
 
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import StructSchemaKcql._
-object StructKcql extends FieldValueGetter {
+import scala.util.{Failure, Success, Try}
+
+object StructSql extends FieldValueGetter {
 
   implicit class IndexedRecordExtension(val struct: Struct) extends AnyVal {
     def get(fieldName: String): Any = {
@@ -34,30 +36,48 @@ object StructKcql extends FieldValueGetter {
     }
   }
 
-  implicit class StructKcqlConverter(val from: Struct) extends AnyVal {
-    def kcql(query: String): Struct = {
-      val k = Kcql.parse(query)
-      kcql(k)
+  implicit class StructSqlConverter(val from: Struct) extends AnyVal {
+    def sql(query: String): Struct = {
+      import org.apache.calcite.config.Lex
+      import org.apache.calcite.sql.parser.SqlParser
+      val config = SqlParser.configBuilder
+        .setLex(Lex.MYSQL)
+        .setCaseSensitive(false)
+        .setIdentifierMaxLength(250)
+        .build
+
+      val withStructure: Boolean = query.trim.toLowerCase().endsWith("withstructure")
+      val sql = if (withStructure) {
+        query.trim.dropRight("withstructure".length)
+      } else query
+
+      val parser = SqlParser.create(sql, config)
+      val select = Try(parser.parseQuery()) match {
+        case Failure(e) => throw new IllegalArgumentException(s"Query is not valid.${e.getMessage}")
+        case Success(sqlSelect: SqlSelect) => sqlSelect
+        case Success(sqlNode) => throw new IllegalArgumentException("Only `select` statements are allowed")
+      }
+      this.sql(select, !withStructure)
     }
 
-    def kcql(query: Kcql): Struct = {
+    def sql(query: SqlSelect, flatten: Boolean): Struct = {
       Option(from).map { _ =>
-        if (query.hasRetainStructure) {
-          implicit val kcqlContext = new KcqlContext(query.getFields)
+        if (!flatten) {
+          implicit val kcqlContext = new SqlContext(Field.from(query))
           val schema = from.schema().copy()
           kcql(schema)
         } else {
-          implicit val fields = query.getFields.asScala
-          val schema = from.schema().flatten(query.getFields)
+          implicit val fields = Field.from(query)
+          val schema = from.schema().flatten(fields)
           kcqlFlatten(schema)
         }
       }
     }.orNull
 
-    def kcql(fields: Seq[KcqlField], flatten: Boolean): Struct = {
+    def sql(fields: Seq[Field], flatten: Boolean): Struct = {
       Option(from).map { _ =>
         if (!flatten) {
-          implicit val kcqlContext = new KcqlContext(fields)
+          implicit val kcqlContext = new SqlContext(fields)
           val schema = from.schema()
           kcql(schema)
         } else {
@@ -68,21 +88,21 @@ object StructKcql extends FieldValueGetter {
       }.orNull
     }
 
-    def kcql(newSchema: Schema)(implicit kcqlContext: KcqlContext): Struct = {
+    def kcql(newSchema: Schema)(implicit sqlContext: SqlContext): Struct = {
       fromStruct(from, from.schema(), newSchema, Vector.empty[String])
     }
 
 
-    def kcqlFlatten(newSchema: Schema)(implicit fields: Seq[KcqlField]): Struct = {
+    def kcqlFlatten(newSchema: Schema)(implicit fields: Seq[Field]): Struct = {
       flattenStruct(from, newSchema)
     }
 
 
-    def flattenStruct(struct: Struct, newSchema: Schema)(implicit fields: Seq[KcqlField]): Struct = {
+    def flattenStruct(struct: Struct, newSchema: Schema)(implicit fields: Seq[Field]): Struct = {
       val fieldsParentMap = fields.foldLeft(Map.empty[String, ArrayBuffer[String]]) { case (map, f) =>
-        val key = Option(f.getParentFields).map(_.mkString(".")).getOrElse("")
+        val key = Option(f.parents).map(_.mkString(".")).getOrElse("")
         val buffer = map.getOrElse(key, ArrayBuffer.empty[String])
-        buffer += f.getName
+        buffer += f.name
         map + (key -> buffer)
       }
 
@@ -100,20 +120,20 @@ object StructKcql extends FieldValueGetter {
 
       val newStruct = new Struct(newSchema)
       fields.zipWithIndex.foreach { case (field, index) =>
-        if (field.getName == "*") {
-          val sourceFields = struct.schema().getFields(Option(field.getParentFields).map(_.asScala).getOrElse(Seq.empty))
-          val key = Option(field.getParentFields).map(_.mkString(".")).getOrElse("")
+        if (field.name == "*") {
+          val sourceFields = struct.schema().getFields(Option(field.parents).getOrElse(Seq.empty))
+          val key = Option(field.parents).map(_.mkString(".")).getOrElse("")
           sourceFields
             .filter { f =>
               fieldsParentMap.get(key).forall(!_.contains(f.name()))
             }.foreach { f =>
-            val extractedValue = get(struct, struct.schema(), Option(field.getParentFields).map(_.asScala).getOrElse(Seq.empty[String]) :+ f.name())
+            val extractedValue = get(struct, struct.schema(), Option(field.parents).getOrElse(Seq.empty[String]) :+ f.name())
             newStruct.put(getNextFieldName(f.name()), extractedValue.orNull)
           }
         }
         else {
-          val extractedValue = get(struct, struct.schema(), Option(field.getParentFields).map(_.asScala).getOrElse(Seq.empty[String]) :+ field.getName)
-          newStruct.put(getNextFieldName(field.getAlias), extractedValue.orNull)
+          val extractedValue = get(struct, struct.schema(), Option(field.parents).getOrElse(Seq.empty[String]) :+ field.name)
+          newStruct.put(getNextFieldName(field.alias), extractedValue.orNull)
         }
       }
       newStruct
@@ -124,7 +144,7 @@ object StructKcql extends FieldValueGetter {
                   schema: Schema,
                   targetSchema:
                   Schema,
-                  parents: Seq[String])(implicit kcqlContext: KcqlContext): Any = {
+                  parents: Seq[String])(implicit sqlContext: SqlContext): Any = {
       value match {
         case c: java.util.Collection[_] =>
           c.foldLeft(new java.util.ArrayList[Any](c.size())) { (acc, e) =>
@@ -138,13 +158,13 @@ object StructKcql extends FieldValueGetter {
     def fromStruct(record: Struct,
                    schema: Schema,
                    targetSchema: Schema,
-                   parents: Seq[String])(implicit kcqlContext: KcqlContext): Struct = {
-      val fields = kcqlContext.getFieldsForPath(parents)
+                   parents: Seq[String])(implicit sqlContext: SqlContext): Struct = {
+      val fields = sqlContext.getFieldsForPath(parents)
       //.get(parents.head)
       val fieldsTuple = fields.headOption.map { _ =>
         fields.flatMap {
-          case Left(field) if field.getName == "*" =>
-            val filteredFields = fields.collect { case Left(f) if f.getName != "*" => f.getName }.toSet
+          case Left(field) if field.name == "*" =>
+            val filteredFields = fields.collect { case Left(f) if f.name != "*" => f.name }.toSet
 
             schema.fields()
               .withFilter(f => !filteredFields.contains(f.name()))
@@ -155,11 +175,11 @@ object StructKcql extends FieldValueGetter {
               }
 
           case Left(field) =>
-            val sourceField = Option(schema.field(field.getName))
-              .getOrElse(throw new IllegalArgumentException(s"${field.getName} can't be found in ${schema.fields.map(_.name).mkString(",")}"))
+            val sourceField = Option(schema.field(field.name))
+              .getOrElse(throw new IllegalArgumentException(s"${field.name} can't be found in ${schema.fields.map(_.name).mkString(",")}"))
 
-            val targetField = Option(targetSchema.field(field.getAlias))
-              .getOrElse(throw new IllegalArgumentException(s"${field.getAlias} can't be found in ${targetSchema.fields.map(_.name).mkString(",")}"))
+            val targetField = Option(targetSchema.field(field.alias))
+              .getOrElse(throw new IllegalArgumentException(s"${field.alias} can't be found in ${targetSchema.fields.map(_.name).mkString(",")}"))
 
             List(sourceField -> targetField)
 
@@ -196,13 +216,13 @@ object StructKcql extends FieldValueGetter {
     def fromMap(value: Any,
                 fromSchema: Schema,
                 targetSchema: Schema,
-                parents: Seq[String])(implicit kcqlContext: KcqlContext): Any = {
+                parents: Seq[String])(implicit sqlContext: SqlContext): Any = {
       Option(value.asInstanceOf[java.util.Map[String, Any]]).map { map =>
         val newMap = new util.HashMap[String, Any]()
         //check if there are keys for this
-        val fields = kcqlContext.getFieldsForPath(parents)
+        val fields = sqlContext.getFieldsForPath(parents)
         val initialMap = {
-          if (fields.exists(f => f.isLeft && f.left.get.getName == "*")) {
+          if (fields.exists(f => f.isLeft && f.left.get.name == "*")) {
             map.keySet().map(k => k.toString -> k.toString).toMap
           } else {
             Map.empty[String, String]
@@ -210,9 +230,9 @@ object StructKcql extends FieldValueGetter {
         }
 
         fields.headOption.map { _ =>
-          fields.filterNot(f => f.isLeft && f.left.get.getName != "*")
+          fields.filterNot(f => f.isLeft && f.left.get.name != "*")
             .foldLeft(initialMap) {
-              case (m, Left(f)) => m + (f.getName -> f.getAlias)
+              case (m, Left(f)) => m + (f.name -> f.alias)
               case (m, Right(f)) => m + (f -> f)
             }
         }
@@ -231,7 +251,7 @@ object StructKcql extends FieldValueGetter {
     def from(from: Any,
              fromSchema: Schema,
              targetSchema: Schema,
-             parents: Seq[String])(implicit kcqlContext: KcqlContext): Any = {
+             parents: Seq[String])(implicit kcqlContext: SqlContext): Any = {
       Option(from).map { _ =>
         implicit val s = fromSchema
         fromSchema.`type`() match {

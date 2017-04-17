@@ -1,12 +1,12 @@
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
-import com.landoop.connect.kcql.StructKcql._
+import com.landoop.connect.sql.StructSql._
 import com.sksamuel.avro4s.{RecordFormat, SchemaFor, ToRecord}
 import io.confluent.connect.avro.AvroData
 import org.apache.kafka.connect.data.Struct
 import org.scalatest.{Matchers, WordSpec}
 
-class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
+class StructSqlWithRetainStructureTest extends WordSpec with Matchers {
   val avroData = new AvroData(16)
 
   private def compare[T](actual: Struct, t: T)(implicit schemaFor: SchemaFor[T], toRecord: ToRecord[T]) = {
@@ -23,7 +23,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
 
   "StructKcql" should {
     "handle null payload" in {
-      null.asInstanceOf[Struct].kcql("SELECT * FROM topic  withstructure") shouldBe null.asInstanceOf[Any]
+      null.asInstanceOf[Struct].sql("SELECT * FROM topic  withstructure") shouldBe null.asInstanceOf[Any]
     }
 
     "handle 'SELECT * FROM topic withstructure' for a struct" in {
@@ -33,7 +33,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
 
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
-      val actual = struct.kcql("SELECT *FROM topic withstructure")
+      val actual = struct.sql("SELECT *FROM topic withstructure")
       actual shouldBe struct
     }
 
@@ -45,7 +45,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
 
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT *, name as fieldName FROM topic withstructure")
+      val actual = struct.sql("SELECT *, name as fieldName FROM topic withstructure")
 
       case class LocalIngredient(name: String, sugar: Double, fat: Double)
       case class LocalPizza(ingredients: Seq[LocalIngredient], vegetarian: Boolean, vegan: Boolean, calories: Int, fieldName: String)
@@ -61,7 +61,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT *, ingredients as stuff FROM topic withstructure")
+      val actual = struct.sql("SELECT *, ingredients as stuff FROM topic withstructure")
 
       case class LocalIngredient(name: String, sugar: Double, fat: Double)
       case class LocalPizza(name: String, vegetarian: Boolean, vegan: Boolean, calories: Int, stuff: Seq[LocalIngredient])
@@ -77,7 +77,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT name as fieldName, * FROM topic withstructure")
+      val actual = struct.sql("SELECT name as fieldName, * FROM topic withstructure")
 
       case class LocalIngredient(name: String, sugar: Double, fat: Double)
       case class LocalPizza(fieldName: String, ingredients: Seq[LocalIngredient], vegetarian: Boolean, vegan: Boolean, calories: Int)
@@ -92,7 +92,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT vegan FROM topic withstructure")
+      val actual = struct.sql("SELECT vegan FROM topic withstructure")
 
       case class LocalPizza(vegan: Boolean)
       val newpepperoni = LocalPizza(pepperoni.vegan)
@@ -106,7 +106,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT vegan as veganA FROM topic withstructure")
+      val actual = struct.sql("SELECT vegan as veganA FROM topic withstructure")
 
       case class LocalPizza(veganA: Boolean)
       val newpepperoni = LocalPizza(pepperoni.vegan)
@@ -120,7 +120,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT ingredients.name FROM topic withstructure")
+      val actual = struct.sql("SELECT ingredients.name FROM topic withstructure")
 
       case class LocalIngredient(name: String)
       case class LocalPizza(ingredients: Seq[LocalIngredient])
@@ -135,7 +135,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT ingredients.name, ingredients.sugar FROM topic withstructure")
+      val actual = struct.sql("SELECT ingredients.name, ingredients.sugar FROM topic withstructure")
 
       case class LocalIngredient(name: String, sugar: Double)
       case class LocalPizza(ingredients: Seq[LocalIngredient])
@@ -150,7 +150,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT ingredients.name as fieldName, ingredients.sugar as fieldSugar FROM topic withstructure")
+      val actual = struct.sql("SELECT ingredients.name as fieldName, ingredients.sugar as fieldSugar FROM topic withstructure")
 
       case class LocalIngredient(fieldName: String, fieldSugar: Double)
       case class LocalPizza(ingredients: Seq[LocalIngredient])
@@ -166,7 +166,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT ingredients.*,ingredients.name as fieldName, ingredients.sugar as fieldSugar FROM topic withstructure")
+      val actual = struct.sql("SELECT ingredients.*,ingredients.name as fieldName, ingredients.sugar as fieldSugar FROM topic withstructure")
       case class LocalIngredient(fat: Double, fieldName: String, fieldSugar: Double)
       case class LocalPizza(ingredients: Seq[LocalIngredient])
       val newpepperoni = LocalPizza(Seq(LocalIngredient(4.4, "pepperoni", 12), LocalIngredient(0.4, "onions", 1)))
@@ -180,7 +180,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT ingredients.name as fieldName,ingredients.*, ingredients.sugar as fieldSugar FROM topic withstructure")
+      val actual = struct.sql("SELECT ingredients.name as fieldName,ingredients.*, ingredients.sugar as fieldSugar FROM topic withstructure")
 
       case class LocalIngredient(fieldName: String, fat: Double, fieldSugar: Double)
       case class LocalPizza(ingredients: Seq[LocalIngredient])
@@ -195,7 +195,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredients.* FROM topic withstructure")
+      val actual = struct.sql("SELECT ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredients.* FROM topic withstructure")
 
       case class LocalIngredient(fieldName: String, fieldSugar: Double, fat: Double)
       case class LocalPizza(ingredients: Seq[LocalIngredient])
@@ -211,7 +211,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT name, ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredients.* FROM topic withstructure")
+      val actual = struct.sql("SELECT name, ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredients.* FROM topic withstructure")
 
       case class LocalIngredient(fieldName: String, fieldSugar: Double, fat: Double)
       case class LocalPizza(name: String, ingredients: Seq[LocalIngredient])
@@ -226,7 +226,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
 
-      val actual = struct.kcql("SELECT name, ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredients.*, calories as cals FROM topic withstructure")
+      val actual = struct.sql("SELECT name, ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredients.*, calories as cals FROM topic withstructure")
       case class LocalIngredient(fieldName: String, fieldSugar: Double, fat: Double)
       case class LocalPizza(name: String, ingredients: Seq[LocalIngredient], cals: Int)
       val newpepperoni = LocalPizza("pepperoni", Seq(LocalIngredient("pepperoni", 12, 4.4), LocalIngredient("onions", 1, 0.4)), 98)
@@ -240,7 +240,7 @@ class StructKcqlWithRetainStructureTest extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
 
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
-      val actual = struct.kcql("SELECT name, ingredients.name as fieldName, calories as cals, ingredients.sugar as fieldSugar, ingredients.* FROM topic withstructure")
+      val actual = struct.sql("SELECT name, ingredients.name as fieldName, calories as cals, ingredients.sugar as fieldSugar, ingredients.* FROM topic withstructure")
       case class LocalIngredient(fieldName: String, fieldSugar: Double, fat: Double)
       case class LocalPizza(name: String, ingredients: Seq[LocalIngredient], cals: Int)
       val newpepperoni = LocalPizza("pepperoni", Seq(LocalIngredient("pepperoni", 12, 4.4), LocalIngredient("onions", 1, 0.4)), 98)

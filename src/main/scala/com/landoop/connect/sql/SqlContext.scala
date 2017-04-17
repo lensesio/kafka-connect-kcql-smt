@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright 2017 Landoop.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
-import com.datamountaineer.kcql.{Field, Kcql}
+import com.landoop.json.sql.Field
+import org.apache.calcite.sql.SqlSelect
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
-class KcqlContext(val fields: Seq[Field]) {
+class SqlContext(val fields: Iterable[Field]) {
 
   private val cache = FieldsMapBuilder(fields)
 
@@ -48,38 +50,26 @@ class KcqlContext(val fields: Seq[Field]) {
       }
     }
 
-    def apply(fields: Seq[Field]): Map[String, Seq[Either[Field, String]]] = {
+    def apply(fields: Iterable[Field]): Map[String, Seq[Either[Field, String]]] = {
       fields.foldLeft(Map.empty[String, ArrayBuffer[Either[Field, String]]]) { case (map, field) =>
         if (field.hasParents) {
-          val (_, m) = field.getParentFields
+          val (_, m) = field.parents
             .foldLeft((new StringBuilder(), map)) { case ((builder, accMap), p) =>
               val localMap = insertKey(builder.toString(), Right(p), accMap)
-              if (builder.isEmpty) builder.append(p)
+              //if (builder.isEmpty) builder.append(p)
               builder.append(p) -> localMap
             }
-          insertKey(field.getParentFields.mkString("."), Left(field), m)
+          insertKey(field.parents.mkString("."), Left(field), m)
         } else {
           insertKey("", Left(field), map)
         }
       }
     }
 
-    def apply(kcql: Kcql): Map[String, Seq[Either[Field, String]]] = apply(kcql.getFields)
+    def apply(sql: SqlSelect): Map[String, Seq[Either[Field, String]]] = {
+      apply(Field.from(sql))
+    }
   }
 
 }
-
-
-/*case class KcqlContext(fields: Seq[Field]) {
-  def getFieldsForPath(path: String): Seq[Field] = {
-    fields.flatMap { f =>
-      val prefix = Option(f.getParentFields)
-        .map(_.mkString("."))
-        .getOrElse("")
-
-      if (prefix == path) Some(Left(f))
-      else if (prefix.startsWith(path)) Some(Right(prefix.drop(path.length).takeWhile(_ != '.')))
-      else None
-    }
-  }
-}*/
+*/

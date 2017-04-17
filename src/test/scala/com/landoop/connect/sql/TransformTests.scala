@@ -1,9 +1,8 @@
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
 import java.nio.ByteBuffer
 
-import com.datamountaineer.json.kcql.JacksonJson
-import com.datamountaineer.kcql.Kcql
+import com.landoop.json.sql.JacksonJson
 import com.sksamuel.avro4s.{RecordFormat, SchemaFor, ToRecord}
 import io.confluent.connect.avro.AvroData
 import org.apache.kafka.connect.data.{Schema, Struct}
@@ -18,7 +17,7 @@ class TransformTests extends WordSpec with Matchers {
   "Transform" should {
     "throw exception on null value" in {
       intercept[IllegalArgumentException] {
-        Transform(Kcql.parse("SELECT * FROM A"), null, null, true, "topic", 1)
+        Transform(Sql.parse("SELECT * FROM A"), null, null, true, "topic", 1)
       }
     }
 
@@ -27,10 +26,10 @@ class TransformTests extends WordSpec with Matchers {
       val bytes = JacksonJson.toJson(pepperoni).getBytes
       bytes(10) = 12
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       intercept[IllegalArgumentException] {
         Transform(
-          kcql,
+          sql,
           Schema.BYTES_SCHEMA,
           bytes,
           true,
@@ -43,9 +42,9 @@ class TransformTests extends WordSpec with Matchers {
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
       val bytes = JacksonJson.toJson(pepperoni).getBytes
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       val (schema, value) = Transform(
-        kcql,
+        sql,
         Schema.BYTES_SCHEMA,
         bytes,
         true,
@@ -68,9 +67,9 @@ class TransformTests extends WordSpec with Matchers {
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
       val bytes = JacksonJson.toJson(pepperoni).getBytes
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       val (schema, value) = Transform(
-        kcql,
+        sql,
         Schema.BYTES_SCHEMA,
         ByteBuffer.wrap(bytes),
         true,
@@ -94,10 +93,10 @@ class TransformTests extends WordSpec with Matchers {
       val bytes = JacksonJson.toJson(pepperoni).getBytes
       bytes(10) = 12
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       intercept[IllegalArgumentException] {
         Transform(
-          kcql,
+          sql,
           null,
           bytes,
           true,
@@ -110,9 +109,9 @@ class TransformTests extends WordSpec with Matchers {
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
       val bytes = JacksonJson.toJson(pepperoni).getBytes
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       val (schema, value) = Transform(
-        kcql,
+        sql,
         null,
         bytes,
         true,
@@ -135,10 +134,10 @@ class TransformTests extends WordSpec with Matchers {
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
       val json = JacksonJson.toJson(pepperoni).drop(10)
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       intercept[IllegalArgumentException] {
         Transform(
-          kcql,
+          sql,
           Schema.STRING_SCHEMA,
           json,
           true,
@@ -151,9 +150,9 @@ class TransformTests extends WordSpec with Matchers {
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
       val json = JacksonJson.toJson(pepperoni)
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       val (schema, value) = Transform(
-        kcql,
+        sql,
         Schema.STRING_SCHEMA,
         json,
         true,
@@ -175,10 +174,10 @@ class TransformTests extends WordSpec with Matchers {
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
       val json = JacksonJson.toJson(pepperoni).drop(15)
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       intercept[IllegalArgumentException] {
         Transform(
-          kcql,
+          sql,
           null,
           json,
           true,
@@ -191,9 +190,9 @@ class TransformTests extends WordSpec with Matchers {
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
       val json = JacksonJson.toJson(pepperoni)
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       val (schema, value) = Transform(
-        kcql,
+        sql,
         null,
         json,
         true,
@@ -216,9 +215,9 @@ class TransformTests extends WordSpec with Matchers {
       val json = JacksonJson.toJson(pepperoni)
       val map = JacksonJson.mapper.readValue(json, classOf[java.util.HashMap[String, Any]])
 
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       val (schema, value) = Transform(
-        kcql,
+        sql,
         null,
         map,
         true,
@@ -254,7 +253,7 @@ class TransformTests extends WordSpec with Matchers {
 
     "throw exception if schmea is not not Struct" in {
       intercept[IllegalArgumentException] {
-        Transform(Kcql.parse("SELECT * FROM A"), Schema.FLOAT64_SCHEMA, 12.5, true, "topic", 1)
+        Transform(Sql.parse("SELECT * FROM A"), Schema.FLOAT64_SCHEMA, 12.5, true, "topic", 1)
       }
     }
 
@@ -265,9 +264,9 @@ class TransformTests extends WordSpec with Matchers {
       val record = RecordFormat[Pizza].to(pepperoni)
 
       val struct = avroData.toConnectData(SchemaFor[Pizza](), record).value.asInstanceOf[Struct]
-      val kcql = Kcql.parse("SELECT *, name as fieldName FROM topic withstructure")
+      val sql = Sql.parse("SELECT *, name as fieldName FROM topic withstructure")
       val (schema, actual) = Transform(
-        kcql,
+        sql,
         struct.schema(),
         struct,
         true,

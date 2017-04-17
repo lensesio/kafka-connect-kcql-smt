@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
 import java.nio.ByteBuffer
 
-import com.datamountaineer.json.kcql.JacksonJson
-import com.datamountaineer.json.kcql.JsonKcql._
-import com.datamountaineer.kcql.Kcql
 import com.fasterxml.jackson.databind.JsonNode
+import com.landoop.connect.sql.StructSql._
+import com.landoop.json.sql.JacksonJson
+import com.landoop.json.sql.JsonSql._
 import com.typesafe.scalalogging.StrictLogging
+import org.apache.calcite.sql.SqlDialect
 import org.apache.kafka.connect.data.{Schema, Struct}
 
-import scala.collection.JavaConversions._
 import scala.util.{Failure, Success, Try}
-import StructKcql._
-import StructSchemaKcql._
 
 private object Transform extends StrictLogging {
-  def apply(kcql: Kcql,
+  def apply(sql: Sql,
             schema: Schema,
             value: Any,
             isKey: Boolean,
@@ -40,8 +38,8 @@ private object Transform extends StrictLogging {
       val errMsg =
         s"""
            |$msg
-           |Kcql
-           | source=${kcql.getSource}; fiels=${kcql.getFields.map(_.getName).mkString(",")}
+           |Sql
+           | ${sql.select.toSqlString(SqlDialect.DUMMY)}
            |Record
            | topic=$topic; partition=$partition""".stripMargin
 
@@ -58,7 +56,6 @@ private object Transform extends StrictLogging {
       }
       else schema -> value
     } else {
-
       if (schema != null) {
         schema.`type`() match {
           case Schema.Type.BYTES =>
@@ -73,7 +70,7 @@ private object Transform extends StrictLogging {
             Try(JacksonJson.mapper.readTree(array)) match {
               case Failure(e) => raiseException("Invalid json.", Some(e))
               case Success(json) =>
-                Try(json.kcql(kcql)) match {
+                Try(json.sql(sql.select, sql.flatten)) match {
                   case Failure(e) => raiseException(s"A KCQL exception occurred. ${e.getMessage}", Some(e))
                   case Success(jn) =>
                     schema -> jn.toString.getBytes("UTF-8")
@@ -85,7 +82,7 @@ private object Transform extends StrictLogging {
             Try(JacksonJson.asJson(value.asInstanceOf[String])) match {
               case Failure(e) => raiseException("Invalid json", Some(e))
               case Success(json) =>
-                Try(json.kcql(kcql)) match {
+                Try(json.sql(sql.select, sql.flatten)) match {
                   case Success(jn) => schema -> jn.toString
                   case Failure(e) => raiseException(s"A KCQL exception occurred.${e.getMessage}", Some(e))
                 }
@@ -93,7 +90,7 @@ private object Transform extends StrictLogging {
 
           case Schema.Type.STRUCT =>
             val struct = value.asInstanceOf[Struct]
-            Try(struct.kcql(kcql)) match {
+            Try(struct.sql(sql.select, sql.flatten)) match {
               case Success(s) => s.schema() -> s
               case Failure(e) => raiseException(s"A KCQL error occurred.${e.getMessage}", Some(e))
             }
@@ -106,7 +103,7 @@ private object Transform extends StrictLogging {
           case m: java.util.Map[_, _] =>
             val map = m.asInstanceOf[java.util.Map[String, Any]]
             val jsonNode: JsonNode = JacksonJson.mapper.valueToTree(map)
-            Try(jsonNode.kcql(kcql)) match {
+            Try(jsonNode.sql(sql.select, sql.flatten)) match {
               case Success(j) => schema -> JacksonJson.mapper.convertValue(j, classOf[java.util.Map[String, Any]])
               case Failure(e) => raiseException(s"A KCQL exception occurred.${e.getMessage}", Some(e))
             }
@@ -114,7 +111,7 @@ private object Transform extends StrictLogging {
             Try(JacksonJson.asJson(value.asInstanceOf[String])) match {
               case Failure(e) => raiseException("Invalid json", Some(e))
               case Success(json) =>
-                Try(json.kcql(kcql)) match {
+                Try(json.sql(sql.select, sql.flatten)) match {
                   case Success(jn) => schema -> jn.toString
                   case Failure(e) => raiseException(s"A KCQL exception occurred.${e.getMessage}", Some(e))
                 }
@@ -124,7 +121,7 @@ private object Transform extends StrictLogging {
             Try(JacksonJson.mapper.readTree(b)) match {
               case Failure(e) => raiseException("Invalid json.", Some(e))
               case Success(json) =>
-                Try(json.kcql(kcql)) match {
+                Try(json.sql(sql.select, sql.flatten)) match {
                   case Failure(e) => raiseException(s"A KCQL exception occurred. ${e.getMessage}", Some(e))
                   case Success(jn) => schema -> jn.toString.getBytes("UTF-8")
                 }

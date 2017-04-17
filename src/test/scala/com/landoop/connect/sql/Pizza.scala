@@ -1,4 +1,4 @@
-package com.landoop.connect.kcql
+package com.landoop.connect.sql
 
 case class Ingredient(name: String, sugar: Double, fat: Double)
 

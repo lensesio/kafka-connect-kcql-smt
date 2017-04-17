@@ -1,6 +1,6 @@
-# Kafka Connect Kcql Single Message Transform
+# Kafka Connect Sql Single Message Transform
 
-Apply SQL like syntax to transform the Kafka message(key or/and value) when using Kafka Connect.
+Use SQL to drive the transformation of the Kafka message(key or/and value) when using Kafka Connect.
 Before SMT you needed a KStream app to take the message from the source topic apply the transformation to a new topic. 
 We have developed a KStreams library ( you can find on [github](https://github.com/Landoop/kstreams-kcql)) to make it easy expressing simple Kafka streams transformations. 
 
@@ -13,20 +13,20 @@ Sources or sinks might produce/deal-with data that is not in sync with what you 
  - you might want to rename fields
  - (coming soon) might want to filter messages
  
-And you want to express it with a simple syntax! This is where KCQL SMT comes to help you!
+And you want to express it with a simple syntax! This is where SQL SMT comes to help you!
 
 ## Configuration
 
 | Configuration  | Type   | Required|Description | 
 |----------------|--------|----------|------------|
-| connect.transforms.kcql.key  | String | N |Comma separated KCQL targeting the key of a Kafka Message|
-| connect.transforms.kcql.value| String | N |Comma separated KCQL targeting the value of a Kafka Message|
+| connect.transforms.sql.key  | String | N |Comma separated SQL targeting the key of a Kafka Message|
+| connect.transforms.sql.value| String | N |Comma separated SQL targeting the value of a Kafka Message|
 
-The KCQL will drive the topic. You select from a topic and any record on that topic will get the applied transformation.
+The SQL will drive the topic. You select from a topic and any record on that topic will get the applied transformation.
 
 Example configuration
 ```json
-connect.transforms.kcql.value=SELECT ingredients.name as fieldName,ingredients.*, ingredients.sugar as fieldSugar FROM topic1 withstructure;SELECT name, address.street.name as streetName, address.street2.name as streetName2 FROM topic2
+connect.transforms.sql.value=SELECT ingredients.name as fieldName,ingredients.*, ingredients.sugar as fieldSugar FROM topic1 withstructure;SELECT name, address.street.name as streetName, address.street2.name as streetName2 FROM topic2
 ```
 
 ## Kafka Connect Payloads supported
@@ -42,19 +42,17 @@ Supported payload type (applies to both key and value):
 | NULL  |  Json (byte[])| NULL | Json (byte[])|
 | NULL  |  Json (string)| NULL | Json (string)|
 
-### KCQL
-KCQL is a SQL like syntax created to easy the settings required for a Kafka Connect connector.
-You can find the repo [here](https://github.com/datamountaineer/kafka-connect-query-language).
-While the syntax supports more than a simple select for the SMT that's the only functionality required.
-
+### SQL
+We make use of **Apache Calcite** to handle the SQL parsing. The library support for SQL is quite large but for now
+we only handle simple SQL identifiers (nested structure is supported) with more to come like: WHERE condition and probably SQL operation(field concatenation for example)
 Syntax:
 ```SQL
 SELECT ...
 FROM TOPIC
-[WITHSTRUCTURE|]
+[WITHSTRUCTURE]
 ```
-The SMT uses KCQL v2 where we added support for addressing nested fields. 
-There are two modes for KCQL when it comes to SMT
+
+There are two modes for the SQL when it comes to Kafka Connect SMT
 * flatten the structure. General syntax is like this:`SELECT ... FROM TOPIC_A`
 ```sql
 //rename and only pick fields on first level
@@ -87,7 +85,7 @@ SELECT ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredien
 
 
 #### Not supported
-Applying KCQL to value to use parts of the key.
+Applying SQL to value to use the message key fields or metadata. Coming soon!
 
 **0.1 (2017-05-16)**
 

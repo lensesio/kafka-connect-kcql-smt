@@ -19,7 +19,7 @@ apply plugin: 'net.researchgate.release'
 allprojects {
     group = 'com.landoop'
     version = version
-    description = "KCQL Kafka Connect SMT library"
+    description = "SQL Kafka Connect SMT library"
 
     apply plugin: 'scala'
     apply plugin: 'maven'
@@ -33,7 +33,6 @@ allprojects {
         scalaCheck = '1.11.1'
         scalaTest = '2.2.6'
         junitVersion = '4.12'
-        kcqlVersion = '2.0.10'
         kafkaVersion = '0.10.2.0'
         confluentVersion = '3.2.0'
         scalaLoggingVersion = '3.5.0'
@@ -41,12 +40,9 @@ allprojects {
         avroVersion = '1.8.1'
         avro4sVersion = "1.6.2"
         slf4jVersion = "1.7.7"
-        bouncyCastleVersion = "1.54"
-        apacheDirectoryVersion = "2.0.0-M22"
-        apacheDirectoryApiVersion = "1.0.0-M33"
         avroVersion = "1.8.1"
         avro4sVersion = "1.6.2"
-        jsonKcql =  "0.7"
+        jsonSql =  "0.1"
     }
 
     repositories {
@@ -66,11 +62,7 @@ allprojects {
         compile "com.typesafe.scala-logging:scala-logging_$scalaMajorVersion:$scalaLoggingVersion"
 
         provided "org.apache.kafka:connect-api:${kafkaVersion}"
-        compile("com.datamountaineer:kcql:$kcqlVersion") {
-            exclude group: "com.google.guava", module: "guava"
-        }
-        compile("com.datamountaineer:json-kcql:$jsonKcql")
-
+        compile("com.landoop:json-sql_$scalaMajorVersion:$jsonSql")
         testCompile "org.mockito:mockito-core:$mockitoVersion"
         testCompile "org.scalacheck:scalacheck_$scalaMajorVersion:$scalaCheck"
         testCompile "org.scalatest:scalatest_$scalaMajorVersion:$scalaTest"
