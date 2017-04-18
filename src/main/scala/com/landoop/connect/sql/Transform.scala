@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.landoop.connect.sql.StructSql._
 import com.landoop.json.sql.JacksonJson
 import com.landoop.json.sql.JsonSql._
-import com.typesafe.scalalogging.StrictLogging
+import com.typesafe.scalalogging.slf4j.StrictLogging
 import org.apache.calcite.sql.SqlDialect
 import org.apache.kafka.connect.data.{Schema, Struct}
 

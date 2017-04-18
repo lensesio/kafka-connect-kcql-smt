@@ -24,6 +24,7 @@ allprojects {
     apply plugin: 'scala'
     apply plugin: 'maven'
     apply plugin: 'com.github.maiflai.scalatest'
+    apply plugin: 'distribution'
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
 
@@ -35,14 +36,12 @@ allprojects {
         junitVersion = '4.12'
         kafkaVersion = '0.10.2.0'
         confluentVersion = '3.2.0'
-        scalaLoggingVersion = '3.5.0'
+        scalaLoggingVersion = '2.1.2'
         mockitoVersion = '2.7.13'
         avroVersion = '1.8.1'
         avro4sVersion = "1.6.2"
         slf4jVersion = "1.7.7"
-        avroVersion = "1.8.1"
-        avro4sVersion = "1.6.2"
-        jsonSql =  "0.1"
+        jsonSql =  "0.2"
     }
 
     repositories {
@@ -59,7 +58,7 @@ allprojects {
 
     dependencies {
         compile "org.scala-lang:scala-library:$scala"
-        compile "com.typesafe.scala-logging:scala-logging_$scalaMajorVersion:$scalaLoggingVersion"
+        compile "com.typesafe.scala-logging:scala-logging-slf4j_$scalaMajorVersion:$scalaLoggingVersion"
 
         provided "org.apache.kafka:connect-api:${kafkaVersion}"
         compile("com.landoop:json-sql_$scalaMajorVersion:$jsonSql")
@@ -112,6 +111,15 @@ allprojects {
     tasks.withType(Tar) {
         compression Compression.GZIP
         extension = 'tgz'
+    }
+
+    distributions {
+        main {
+            contents {
+                from jar
+                from(project.configurations.compile)
+            }
+        }
     }
 
     artifacts {
