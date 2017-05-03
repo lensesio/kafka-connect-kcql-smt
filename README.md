@@ -22,7 +22,8 @@ And you want to express it with a simple syntax! This is where SQL SMT comes to 
 | connect.transforms.sql.key  | String | N |Comma separated SQL targeting the key of a Kafka Message|
 | connect.transforms.sql.value| String | N |Comma separated SQL targeting the value of a Kafka Message|
 
-The SQL will drive the topic. You select from a topic and any record on that topic will get the applied transformation.
+The SQL will define the mapping between the topic and the transformation to be applied. 
+Each message on the specified topics will get the appropriate transformation.
 
 Example configuration
 ```json
@@ -67,7 +68,7 @@ SELECT name, address.street.*, address.street2.name as streetName2 FROM topic
 * retain structure. Syntax looks like `SELECT ... FROM TOPIC_A WITHSTUCTURE`. Notice the **WITHSTRUCTRE** keyword. 
    
 ```sql
-//you can select itself - obviousely no real gain on this
+//you can select itself - obviously no real gain on this
 SELECT * FROM topic withstructure 
 
 //rename a field 
