@@ -15,7 +15,8 @@
  */
 package com.landoop.connect.sql
 
-import com.landoop.json.sql.SqlContext
+import com.landoop.sql.SqlContext
+import com.landoop.sql.Field._
 import org.apache.calcite.sql.SqlSelect
 import org.apache.kafka.connect.data.{Field, Schema, SchemaBuilder}
 
@@ -55,11 +56,12 @@ object StructSchemaSql {
 
     def copy(query: SqlSelect, flatten: Boolean): Schema = {
       if (!flatten) {
-        implicit val kcqlContext = new SqlContext(com.landoop.json.sql.Field.from(query))
+        com.landoop.sql.Field.from(query)
+        implicit val kcqlContext = new SqlContext(com.landoop.sql.Field.from(query))
         copy
       }
       else {
-        this.flatten(com.landoop.json.sql.Field.from(query))
+        this.flatten(com.landoop.sql.Field.from(query))
       }
     }
 
@@ -67,7 +69,7 @@ object StructSchemaSql {
       AvroSchemaExtension.copy(schema, Vector.empty)
     }
 
-    def flatten(fields: Seq[com.landoop.json.sql.Field]): Schema = {
+    def flatten(fields: Seq[com.landoop.sql.Field]): Schema = {
       def allowOnlyStarSelection() = {
         fields match {
           case Seq(f) if f.name == "*" => schema
@@ -96,7 +98,7 @@ object StructSchemaSql {
       schema
     }
 
-    private def createRecordSchemaForFlatten(fields: Seq[com.landoop.json.sql.Field]): Schema = {
+    private def createRecordSchemaForFlatten(fields: Seq[com.landoop.sql.Field]): Schema = {
       var builder = SchemaBuilder.struct().name(schema.name())
         .doc(schema.doc())
       Option(schema.parameters()).map(builder.parameters)
@@ -339,7 +341,7 @@ object StructSchemaSql {
       new Field(field.name(), field.index(), copyAsOptional(field.schema()))
     }
 
-    def checkAllowedSchemas(schema: Schema, field: com.landoop.json.sql.Field): Unit = {
+    def checkAllowedSchemas(schema: Schema, field: com.landoop.sql.Field): Unit = {
       schema.`type`() match {
         case Schema.Type.ARRAY | Schema.Type.MAP => throw new IllegalArgumentException(s"Can't flatten from schema:$schema by selecting '${field.name}'")
         case _ =>

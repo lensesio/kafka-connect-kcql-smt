@@ -18,7 +18,7 @@ package com.landoop.connect.sql
 import java.util
 
 import com.landoop.connect.sql.StructSchemaSql._
-import com.landoop.json.sql.{Field, SqlContext}
+import com.landoop.sql.{Field, SqlContext}
 import org.apache.calcite.sql.SqlSelect
 import org.apache.kafka.connect.data.{Schema, Struct}
 
@@ -55,7 +55,7 @@ object StructSql extends FieldValueGetter {
       val select = Try(parser.parseQuery()) match {
         case Failure(e) => throw new IllegalArgumentException(s"Query is not valid.${e.getMessage}")
         case Success(sqlSelect: SqlSelect) => sqlSelect
-        case Success(sqlNode) => throw new IllegalArgumentException("Only `select` statements are allowed")
+        case Success(_) => throw new IllegalArgumentException("Only `select` statements are allowed")
       }
       this.sql(select, !withStructure)
     }

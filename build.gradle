@@ -6,9 +6,9 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.github.maiflai:gradle-scalatest:0.14'
+        classpath 'com.github.maiflai:gradle-scalatest:0.18'
         classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3'
-        classpath 'net.researchgate:gradle-release:2.3.4'
+        classpath 'net.researchgate:gradle-release:2.6.0'
     }
 }
 
@@ -34,14 +34,14 @@ allprojects {
         scalaCheck = '1.11.1'
         scalaTest = '2.2.6'
         junitVersion = '4.12'
-        kafkaVersion = '0.10.2.0'
-        confluentVersion = '3.2.0'
+        kafkaVersion = '1.0.0'
+        confluentVersion = '4.0.0'
         scalaLoggingVersion = '2.1.2'
         mockitoVersion = '2.7.13'
         avroVersion = '1.8.1'
         avro4sVersion = "1.6.2"
         slf4jVersion = "1.7.7"
-        jsonSql =  "0.2"
+        jsonSql =  "0.5"
     }
 
     repositories {
