@@ -41,7 +41,7 @@ allprojects {
         avroVersion = '1.8.1'
         avro4sVersion = "1.6.2"
         slf4jVersion = "1.7.7"
-        jsonSql =  "0.5"
+        jsonSql =  "1.0.1"
     }
 
     repositories {
@@ -59,9 +59,9 @@ allprojects {
     dependencies {
         compile "org.scala-lang:scala-library:$scala"
         compile "com.typesafe.scala-logging:scala-logging-slf4j_$scalaMajorVersion:$scalaLoggingVersion"
+        compile("com.landoop:json-sql_$scalaMajorVersion:$jsonSql")
 
         provided "org.apache.kafka:connect-api:${kafkaVersion}"
-        compile("com.landoop:json-sql_$scalaMajorVersion:$jsonSql")
         testCompile "org.mockito:mockito-core:$mockitoVersion"
         testCompile "org.scalacheck:scalacheck_$scalaMajorVersion:$scalaCheck"
         testCompile "org.scalatest:scalatest_$scalaMajorVersion:$scalaTest"
@@ -72,7 +72,6 @@ allprojects {
         testCompile 'org.pegdown:pegdown:1.1.0'
         testCompile "org.apache.avro:avro:$avroVersion"
         testCompile "com.sksamuel.avro4s:avro4s-core_$scalaMajorVersion:$avro4sVersion"
-
     }
 
     test {
@@ -149,12 +148,12 @@ allprojects {
                         name project.name
                         description project.description
                         packaging 'jar'
-                        url 'https://github.com/datamountaineer/kafka-connect-common'
+                        url 'https://github.com/landoop/kafka-connect-kcql-smt'
 
                         scm {
-                            connection 'scm:git:https://github.com/datamountaineer/kafka-connect-common.git'
-                            developerConnection 'scm:git:git@github.com:datamountaineer/kafka-connect-common.git'
-                            url 'https://github.com/datamountaineer/kafka-connect-common.git'
+                            connection 'scm:git:https://github.com/dlandoop/kafka-connect-kcql-smt.git'
+                            developerConnection 'scm:git:git@github.com:landoop/kafka-connect-kcql-smt.git'
+                            url 'https://github.com/landoop/kafka-connect-kcql-smt.git'
                         }
 
                         licenses {
@@ -170,12 +169,12 @@ allprojects {
                             developer {
                                 id = 'stheppi'
                                 name = 'Stefan Bocutiu'
-                                email = 'stefan@datamountaineer.com'
+                                email = 'stefan@landoop.com'
                             }
                             developer {
                                 id = 'Antwnis'
                                 name = 'Antonios Chalkiopoulos'
-                                email = 'antonios@datamountaineer.com'
+                                email = 'antonios@landoop.com'
                             }
                         }
                     }
