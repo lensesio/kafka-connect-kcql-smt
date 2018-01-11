@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Landoop/kafka-connect-kcql-smt.svg?branch=master)](https://travis-ci.org/Landoop/kafka-connect-kcql-smt)
+
 # Kafka Connect Sql Single Message Transform
 
 Use SQL to drive the transformation of the Kafka message(key or/and value) when using Kafka Connect.
