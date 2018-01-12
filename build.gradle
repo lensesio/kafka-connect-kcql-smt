@@ -151,7 +151,7 @@ allprojects {
                         url 'https://github.com/landoop/kafka-connect-kcql-smt'
 
                         scm {
-                            connection 'scm:git:https://github.com/dlandoop/kafka-connect-kcql-smt.git'
+                            connection 'scm:git:https://github.com/landoop/kafka-connect-kcql-smt.git'
                             developerConnection 'scm:git:git@github.com:landoop/kafka-connect-kcql-smt.git'
                             url 'https://github.com/landoop/kafka-connect-kcql-smt.git'
                         }
