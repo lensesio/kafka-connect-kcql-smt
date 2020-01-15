@@ -6,9 +6,9 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.github.maiflai:gradle-scalatest:0.18'
-        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.11.0'
-        classpath 'net.researchgate:gradle-release:2.6.0'
+        classpath 'com.github.maiflai:gradle-scalatest:0.25'
+        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.9.0'
+        classpath 'net.researchgate:gradle-release:2.8.1'
     }
 }
 
@@ -29,19 +29,19 @@ allprojects {
     targetCompatibility = 1.8
 
     ext {
-        scalaMajorVersion = '2.11'
-        scala = '2.11.8'
-        scalaCheck = '1.11.1'
-        scalaTest = '2.2.6'
+        scalaMajorVersion = '2.12'
+        scala = '2.12.8'
+        scalaCheck = '1.14.1'
+        scalaTest = '3.0.8'
         junitVersion = '4.12'
-        kafkaVersion = '1.0.0'
-        confluentVersion = '4.0.0'
-        scalaLoggingVersion = '2.1.2'
-        mockitoVersion = '2.7.13'
+        kafkaVersion = '2.3.0'
+        confluentVersion = '5.2.0'
+        scalaLoggingVersion = '3.9.2'
+        mockitoVersion = '2.12.0'
         avroVersion = '1.8.1'
-        avro4sVersion = "1.6.2"
+        avro4sVersion = "1.7.0"
         slf4jVersion = "1.7.7"
-        jsonSql =  "1.0.1"
+        jsonSql =  "2.0.0"
     }
 
     repositories {
@@ -49,6 +49,7 @@ allprojects {
         mavenCentral()
         maven { url "http://packages.confluent.io/maven/" }
         maven { url "http://repo.typesafe.com/typesafe/releases/" }
+        maven { url "https://mvnrepository.com/artifact" }
     }
 
     configurations {
@@ -57,21 +58,23 @@ allprojects {
     }
 
     dependencies {
-        compile "org.scala-lang:scala-library:$scala"
-        compile "com.typesafe.scala-logging:scala-logging-slf4j_$scalaMajorVersion:$scalaLoggingVersion"
+        compile "org.scala-lang:scala-library:${scala}"
+        // compile "com.typesafe.scala-logging:scala-logging-slf4j_2.11:$scalaLoggingVersion"
+        compile group: 'com.typesafe.scala-logging', name: "scala-logging_${scalaMajorVersion}", version: "${scalaLoggingVersion}"
         compile("com.landoop:json-sql_$scalaMajorVersion:$jsonSql")
 
         provided "org.apache.kafka:connect-api:${kafkaVersion}"
-        testCompile "org.mockito:mockito-core:$mockitoVersion"
-        testCompile "org.scalacheck:scalacheck_$scalaMajorVersion:$scalaCheck"
-        testCompile "org.scalatest:scalatest_$scalaMajorVersion:$scalaTest"
-        testCompile "io.confluent:kafka-connect-avro-converter:$confluentVersion"
-        testCompile "junit:junit:$junitVersion"
+        testCompile "org.mockito:mockito-core:${mockitoVersion}"
+        testCompile "org.scalacheck:scalacheck_${scalaMajorVersion}:${scalaCheck}"
+        testCompile "org.scalatest:scalatest_${scalaMajorVersion}:${scalaTest}"
+        testCompile "io.confluent:kafka-connect-avro-converter:${confluentVersion}"
+        testCompile "junit:junit:${junitVersion}"
         testCompile "org.apache.curator:curator-test:3.1.0"
         testCompile 'org.powermock:powermock-module-junit4:1.6.5'
         testCompile 'org.pegdown:pegdown:1.1.0'
-        testCompile "org.apache.avro:avro:$avroVersion"
-        testCompile "com.sksamuel.avro4s:avro4s-core_$scalaMajorVersion:$avro4sVersion"
+        testCompile "org.apache.avro:avro:${avroVersion}"
+        // testCompile "com.sksamuel.avro4s:avro4s-core_2.11:$avro4sVersion"
+        compile group: 'com.sksamuel.avro4s', name: "avro4s-core_${scalaMajorVersion}", version: "${avro4sVersion}"
     }
 
     test {
