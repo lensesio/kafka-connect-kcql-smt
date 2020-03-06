@@ -22,6 +22,15 @@ jobs:
         git checkout update/scala_12
         ./gradlew clean build install
         cd "${OLDPWD}"
+    - name: Install local json-sql
+      run: |
+        export OLDPWD="${PWD}"
+        cd /opt
+        git clone https://github.com/lensesio/json-sql.git
+        cd /opt/json-sql
+        git checkout update/scala_2_12
+        ./gradlew clean build install
+        cd "${OLDPWD}"
     - name: Download gradle
       run: ./gradlew --version
     - name: Run tests
