@@ -90,6 +90,10 @@ SELECT ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredien
 #### Not supported
 Applying SQL to value to use the message key fields or metadata. Coming soon!
 
+**2.0 (2020-01-01)**
+
+* Updated to scala 2.12
+
 **0.1 (2017-05-16)**
 
 * first release
