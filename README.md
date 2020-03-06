@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/Landoop/kafka-connect-kcql-smt.svg?branch=master)](https://travis-ci.org/Landoop/kafka-connect-kcql-smt)
+![Gradle build](https://github.com/lensesio/kafka-connect-kcql-smt/workflows/Gradle%20build/badge.svg)
 
 # Kafka Connect Sql Single Message Transform
 
@@ -100,7 +100,7 @@ Applying SQL to value to use the message key fields or metadata. Coming soon!
 
 ### Building
 
-***Requires gradle 3.4.1 to build.***
+***Requires gradle 5.0 to build.***
 
 To build
 
