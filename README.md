@@ -1,4 +1,4 @@
-![Gradle build](https://github.com/lensesio/kafka-connect-kcql-smt/workflows/Gradle%20build/badge.svg)
+![Action Status](https://github.com/lensesio/kafka-connect-kcql-smt/workflows/badge.svg)
 
 # Kafka Connect Sql Single Message Transform
 
