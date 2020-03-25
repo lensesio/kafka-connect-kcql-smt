@@ -1,4 +1,4 @@
-![Action Status](https://github.com/lensesio/kafka-connect-kcql-smt/workflows/badge.svg)
+![Action Status](https://github.com/lensesio/kafka-connect-kcql-smt/workflows/CI/badge.svg)
 
 # Kafka Connect Sql Single Message Transform
 
