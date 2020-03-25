@@ -6,7 +6,7 @@ import org.apache.kafka.connect.data.{Schema, Struct}
 import org.apache.kafka.connect.sink.SinkRecord
 import org.scalatest.{Matchers, WordSpec}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /**
   * Created by stefan on 16/04/2017.
@@ -15,7 +15,7 @@ class TransformationTests extends WordSpec with Matchers {
   "Transformation" should {
     "handle records for which we haven't specified SQL" in {
       val t = new Transformation[SinkRecord]
-      t.configure(Map.empty[String, Any])
+      t.configure(Map.empty[String, Any].asJava)
 
       val sr = new SinkRecord("topic1", 1, Schema.INT64_SCHEMA, 122, Schema.BYTES_SCHEMA, Array(1, 2, 3, 4), 1)
       val actual = t.apply(sr)
@@ -29,7 +29,7 @@ class TransformationTests extends WordSpec with Matchers {
       val t = new Transformation[SinkRecord]
       t.configure(Map(
         Transformation.VALUE_SQL_CONFIG -> s"SELECT *, name as fieldName FROM $topic1 withstructure"
-      ))
+      ).asJava)
 
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
 
@@ -63,7 +63,7 @@ class TransformationTests extends WordSpec with Matchers {
       val t = new Transformation[SinkRecord]
       t.configure(Map(
         Transformation.KEY_SQL_CONFIG -> s"SELECT *, name as fieldName FROM $topic1 withstructure"
-      ))
+      ).asJava)
 
       val pepperoni = Pizza("pepperoni", Seq(Ingredient("pepperoni", 12, 4.4), Ingredient("onions", 1, 0.4)), false, false, 98)
 

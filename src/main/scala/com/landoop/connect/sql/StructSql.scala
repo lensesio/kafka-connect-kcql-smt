@@ -22,7 +22,7 @@ import com.landoop.sql.{Field, SqlContext}
 import org.apache.calcite.sql.SqlSelect
 import org.apache.kafka.connect.data.{Schema, Struct}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
@@ -147,7 +147,7 @@ object StructSql extends FieldValueGetter {
                   parents: Seq[String])(implicit sqlContext: SqlContext): Any = {
       value match {
         case c: java.util.Collection[_] =>
-          c.foldLeft(new java.util.ArrayList[Any](c.size())) { (acc, e) =>
+          c.asScala.foldLeft(new java.util.ArrayList[Any](c.size())) { (acc, e) =>
             acc.add(from(e, schema.valueSchema(), targetSchema.valueSchema(), parents))
             acc
           }
@@ -166,7 +166,7 @@ object StructSql extends FieldValueGetter {
           case Left(field) if field.name == "*" =>
             val filteredFields = fields.collect { case Left(f) if f.name != "*" => f.name }.toSet
 
-            schema.fields()
+            schema.fields().asScala
               .withFilter(f => !filteredFields.contains(f.name()))
               .map { f =>
                 val sourceField = Option(schema.field(f.name))
@@ -176,10 +176,10 @@ object StructSql extends FieldValueGetter {
 
           case Left(field) =>
             val sourceField = Option(schema.field(field.name))
-              .getOrElse(throw new IllegalArgumentException(s"${field.name} can't be found in ${schema.fields.map(_.name).mkString(",")}"))
+              .getOrElse(throw new IllegalArgumentException(s"${field.name} can't be found in ${schema.fields.asScala.map(_.name).mkString(",")}"))
 
             val targetField = Option(targetSchema.field(field.alias))
-              .getOrElse(throw new IllegalArgumentException(s"${field.alias} can't be found in ${targetSchema.fields.map(_.name).mkString(",")}"))
+              .getOrElse(throw new IllegalArgumentException(s"${field.alias} can't be found in ${targetSchema.fields.asScala.map(_.name).mkString(",")}"))
 
             List(sourceField -> targetField)
 
@@ -188,16 +188,16 @@ object StructSql extends FieldValueGetter {
               .getOrElse(throw new IllegalArgumentException(s"$field can't be found in $schema"))
 
             val targetField = Option(targetSchema.field(field))
-              .getOrElse(throw new IllegalArgumentException(s"$field can't be found in ${targetSchema.fields.map(_.name).mkString(",")}"))
+              .getOrElse(throw new IllegalArgumentException(s"$field can't be found in ${targetSchema.fields.asScala.map(_.name).mkString(",")}"))
 
             List(sourceField -> targetField)
 
         }
       }.getOrElse {
-        targetSchema.fields()
+        targetSchema.fields().asScala
           .map { f =>
             val sourceField = Option(schema.field(f.name))
-              .getOrElse(throw new IllegalArgumentException(s"Can't find the field ${f.name} in ${schema.fields().map(_.name()).mkString(",")}"))
+              .getOrElse(throw new IllegalArgumentException(s"Can't find the field ${f.name} in ${schema.fields().asScala.map(_.name()).mkString(",")}"))
             sourceField -> f
           }
       }
@@ -223,7 +223,7 @@ object StructSql extends FieldValueGetter {
         val fields = sqlContext.getFieldsForPath(parents)
         val initialMap = {
           if (fields.exists(f => f.isLeft && f.left.get.name == "*")) {
-            map.keySet().map(k => k.toString -> k.toString).toMap
+            map.keySet().asScala.map(k => k.toString -> k.toString).toMap
           } else {
             Map.empty[String, String]
           }
@@ -236,7 +236,7 @@ object StructSql extends FieldValueGetter {
               case (m, Right(f)) => m + (f -> f)
             }
         }
-          .getOrElse(map.keySet().map(k => k.toString -> k.toString).toMap)
+          .getOrElse(map.keySet().asScala.map(k => k.toString -> k.toString).toMap)
           .foreach { case (key, alias) =>
             Option(map.get(key)).foreach { v =>
               newMap.put(

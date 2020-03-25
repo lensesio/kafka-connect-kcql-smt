@@ -21,7 +21,7 @@ import org.apache.calcite.sql.SqlSelect
 import org.apache.kafka.connect.data.{Field, Schema, SchemaBuilder}
 
 import scala.annotation.tailrec
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 object StructSchemaSql {
@@ -32,7 +32,7 @@ object StructSchemaSql {
       def navigate(current: Schema, parents: Seq[String]): Seq[Field] = {
         if (Option(parents).isEmpty || parents.isEmpty) {
           current.`type`() match {
-            case Schema.Type.STRUCT => current.fields()
+            case Schema.Type.STRUCT => current.fields().asScala
             case Schema.Type.MAP => throw new IllegalArgumentException(s"Can't select fields ${path.mkString(".")} since it resolved to a Map($current)")
             case _ => throw new IllegalArgumentException(s"Can't select fields ${path.mkString(".")} from schema:$current ")
           }
@@ -146,14 +146,14 @@ object StructSchemaSql {
 
               s.`type`() match {
                 case Schema.Type.STRUCT =>
-                  if (!s.isOptional) s.fields().toSeq
-                  else s.fields().map(AvroSchemaExtension.withOptional)
+                  if (!s.isOptional) s.fields().asScala.toSeq
+                  else s.fields().asScala.map(AvroSchemaExtension.withOptional)
                 case other => throw new IllegalArgumentException(s"Field selection ${p.mkString(".")} resolves to schema type:$other. Only RECORD type is allowed")
               }
             }
             .getOrElse {
-              if (!schema.isOptional) schema.fields().toSeq
-              else schema.fields.map(AvroSchemaExtension.withOptional)
+              if (!schema.isOptional) schema.fields().asScala
+              else schema.fields.asScala.map(AvroSchemaExtension.withOptional)
             }
             .withFilter { f =>
               siblings.collect { case s if s.contains(f.name()) => false }.getOrElse(true)
@@ -227,7 +227,7 @@ object StructSchemaSql {
           Option(from.parameters()).foreach(builder.parameters)
           Option(from.defaultValue()).foreach(builder.defaultValue)
 
-          from.fields().foreach(f => builder.field(f.name(), f.schema()))
+          from.fields().asScala.foreach(f => builder.field(f.name(), f.schema()))
           builder.optional().build()
 
         case Schema.Type.ARRAY =>
@@ -264,14 +264,14 @@ object StructSchemaSql {
       val fields = sqlContext.getFieldsForPath(parents)
       fields match {
         case Seq() =>
-          from.fields()
+          from.fields().asScala
             .foreach { schemaField =>
               val newSchema = copy(schemaField.schema(), parents :+ schemaField.name)
               builder.field(schemaField.name, newSchema)
             }
 
         case Seq(Left(f)) if f.name == "*" =>
-          from.fields()
+          from.fields().asScala
             .foreach { schemaField =>
               val newSchema = copy(schemaField.schema(), parents :+ schemaField.name)
               builder.field(schemaField.name, newSchema)
@@ -280,7 +280,7 @@ object StructSchemaSql {
         case other =>
           fields.foreach {
             case Left(field) if field.name == "*" =>
-              from.fields()
+              from.fields().asScala
                 .withFilter(f => !fields.exists(e => e.isLeft && e.left.get.name == f.name))
                 .map { f =>
                   val newSchema = copy(f.schema(), parents :+ f.name)
@@ -319,8 +319,8 @@ object StructSchemaSql {
         case Seq(field) if field == "*" =>
           from.`type`() match {
             case Schema.Type.STRUCT =>
-              if (!isOptional) from.fields()
-              else from.fields.map(withOptional)
+              if (!isOptional) from.fields().asScala
+              else from.fields.asScala.map(withOptional)
             case other => throw new IllegalArgumentException(s"Can't select field:$field from ${other.toString}")
           }
         case Seq(field) =>
