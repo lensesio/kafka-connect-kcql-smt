@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/Landoop/kafka-connect-kcql-smt.svg?branch=master)](https://travis-ci.org/Landoop/kafka-connect-kcql-smt)
+![Action Status](https://github.com/lensesio/kafka-connect-kcql-smt/workflows/badge.svg)
 
 # Kafka Connect Sql Single Message Transform
 
@@ -90,13 +90,17 @@ SELECT ingredients.name as fieldName, ingredients.sugar as fieldSugar, ingredien
 #### Not supported
 Applying SQL to value to use the message key fields or metadata. Coming soon!
 
+**2.0 (2020-01-01)**
+
+* Updated to scala 2.12
+
 **0.1 (2017-05-16)**
 
 * first release
 
 ### Building
 
-***Requires gradle 3.4.1 to build.***
+***Requires gradle 5.0 to build.***
 
 To build
 
