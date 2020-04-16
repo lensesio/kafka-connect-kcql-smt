@@ -59,9 +59,9 @@ allprojects {
 
     dependencies {
         compile "org.scala-lang:scala-library:${scala}"
-        // compile "com.typesafe.scala-logging:scala-logging-slf4j_2.11:$scalaLoggingVersion"
         compile group: 'com.typesafe.scala-logging', name: "scala-logging_${scalaMajorVersion}", version: "${scalaLoggingVersion}"
         compile("com.landoop:json-sql_$scalaMajorVersion:$jsonSql")
+        compile group: 'com.sksamuel.avro4s', name: "avro4s-core_${scalaMajorVersion}", version: "${avro4sVersion}"
 
         provided "org.apache.kafka:connect-api:${kafkaVersion}"
         testCompile "org.mockito:mockito-core:${mockitoVersion}"
@@ -73,8 +73,7 @@ allprojects {
         testCompile 'org.powermock:powermock-module-junit4:1.6.5'
         testCompile 'org.pegdown:pegdown:1.1.0'
         testCompile "org.apache.avro:avro:${avroVersion}"
-        // testCompile "com.sksamuel.avro4s:avro4s-core_2.11:$avro4sVersion"
-        compile group: 'com.sksamuel.avro4s', name: "avro4s-core_${scalaMajorVersion}", version: "${avro4sVersion}"
+
     }
 
     test {
