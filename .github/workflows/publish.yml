@@ -23,8 +23,8 @@ jobs:
       run: |
         base64 -d <<< "$SIGNING_GPG_KEY" > /tmp/secring.gpg
         echo "$GRADLE_PROPERTIES" > gradle.properties
-    - shell: bash
-      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-      id: extract_branch
+    - name: Get the tag
+      id: get_tag
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
     - name: Upload archive
-      run: ./gradlew -Prelease -Pversion=${{ steps.extract_branch.outputs.branch }} clean build uploadArchives
+      run: ./gradlew -Prelease -Pversion=${{ steps.get_tag.outputs.VERSION }} clean build uploadArchives
